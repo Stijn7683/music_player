@@ -1,0 +1,33 @@
+{
+    "@@locale": "pap",
+
+    "play": "Toca",
+    "@play": {},
+    
+    "pause": "Pausa",
+    "@pause": {},
+
+    "skip5Seconds": "Sali 5 segundo",
+    "@skip5Seconds": {},
+
+    "playLive": "Toca live",
+    "@playLive": {},
+
+    "playing": "Ta toca",
+    "@playing": {},
+    
+    "paused": "Pausa",
+    "@paused": {},
+
+    "offline": "Offline",
+    "@offline": {},
+
+    "loading": "Ta karga",
+    "@loading": {},
+
+    "stopped": "Stopá",
+    "@stopped": {},
+
+    "radioStation": "Stashon di radio:",
+    "@radioStation": {}
+}

@@ -1,0 +1,33 @@
+{
+    "@@locale": "nl",
+
+    "play": "Afspelen",
+    "@play": {},
+    
+    "pause": "Pauzeren",
+    "@pause": {},
+
+    "skip5Seconds": "Sla 5 seconden over",
+    "@skip5Seconds": {},
+
+    "playLive": "luister live",
+    "@playLive": {},
+
+    "playing": "Afspelen",
+    "@playing": {},
+    
+    "paused": "Gepauzeerd",
+    "@paused": {},
+
+    "offline": "Offline",
+    "@offline": {},
+
+    "loading": "Laden",
+    "@loading": {},
+
+    "stopped": "Gestopt",
+    "@stopped": {},
+
+    "radioStation": "Radiostation:",
+    "@radioStation": {}
+}

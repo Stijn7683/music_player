@@ -1,0 +1,33 @@
+{
+    "@@locale": "en",
+
+    "play": "Play",
+    "@play": {},
+    
+    "pause": "Pause",
+    "@pause": {},
+
+    "skip5Seconds": "Skip 5 seconds",
+    "@skip5Seconds": {},
+
+    "playLive": "Play live",
+    "@playLive": {},
+
+    "playing": "Playing",
+    "@playing": {},
+    
+    "paused": "Paused",
+    "@paused": {},
+
+    "offline": "Offline",
+    "@offline": {},
+
+    "loading": "Loading",
+    "@loading": {},
+
+    "stopped": "Stopped",
+    "@stopped": {},
+
+    "radioStation": "Radio station:",
+    "@radioStation": {}    
+}
