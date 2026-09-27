@@ -7,6 +7,9 @@
     "pause": "Pause",
     "@pause": {},
 
+    "options": "options",
+    "@options": {},
+
     "skip5Seconds": "Skip 5 seconds",
     "@skip5Seconds": {},
 
@@ -29,5 +32,5 @@
     "@stopped": {},
 
     "radioStation": "Radio station:",
-    "@radioStation": {}    
+    "@radioStation": {}
 }

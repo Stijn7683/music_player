@@ -8,7 +8,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 
-// TODO: upload to github so I can work on it while on vacation
 // TODO: add splash screen color
 
 // Joe Radio - A simple radio streaming app using just_audio and audio_service
@@ -771,6 +770,7 @@ widget.handler.addListener(() {
       builder: (context, menuController, child) {
         return IconButton(
           icon: const Icon(Icons.more_vert),
+          tooltip: l10n.options,
           onPressed: () {
             if (menuController.isOpen) {
               menuController.close();

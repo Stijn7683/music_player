@@ -15,6 +15,9 @@ class AppLocalizationsPap extends AppLocalizations {
   String get pause => 'Pausa';
 
   @override
+  String get options => 'options';
+
+  @override
   String get skip5Seconds => 'Sali 5 segundo';
 
   @override
@@ -37,10 +40,4 @@ class AppLocalizationsPap extends AppLocalizations {
 
   @override
   String get radioStation => 'Stashon di radio:';
-
-  @override
-  String get ad => 'reklamo';
-
-  @override
-  String get adBreak => 'reklamo';
 }

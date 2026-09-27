@@ -109,6 +109,12 @@ abstract class AppLocalizations {
   /// **'Pause'**
   String get pause;
 
+  /// No description provided for @options.
+  ///
+  /// In en, this message translates to:
+  /// **'options'**
+  String get options;
+
   /// No description provided for @skip5Seconds.
   ///
   /// In en, this message translates to:
@@ -156,18 +162,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Radio station:'**
   String get radioStation;
-
-  /// No description provided for @ad.
-  ///
-  /// In en, this message translates to:
-  /// **'Adverticement'**
-  String get ad;
-
-  /// No description provided for @adBreak.
-  ///
-  /// In en, this message translates to:
-  /// **'Ad break'**
-  String get adBreak;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

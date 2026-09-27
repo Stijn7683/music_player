@@ -15,6 +15,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get pause => 'Pauzeren';
 
   @override
+  String get options => 'opties';
+
+  @override
   String get skip5Seconds => 'Sla 5 seconden over';
 
   @override
@@ -37,10 +40,4 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get radioStation => 'Radiostation:';
-
-  @override
-  String get ad => 'Reclame';
-
-  @override
-  String get adBreak => 'Reclame';
 }
