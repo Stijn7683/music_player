@@ -18,6 +18,9 @@
 
     "playing": "Playing",
     "@playing": {},
+
+    "soundOff": "Sound off",
+    "@soundOff": {},
     
     "paused": "Paused",
     "@paused": {},

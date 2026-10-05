@@ -27,6 +27,9 @@ class AppLocalizationsPap extends AppLocalizations {
   String get playing => 'Ta toca';
 
   @override
+  String get soundOff => 'Sonido paga';
+
+  @override
   String get paused => 'Pausa';
 
   @override

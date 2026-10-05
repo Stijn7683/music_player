@@ -5,10 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
-
-// TODO: add splash screen color
 
 // Joe Radio - A simple radio streaming app using just_audio and audio_service
 // in this version state management will be properly implemented with the use of Provider
@@ -172,7 +171,9 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
   // Notifier so the UI can listen to station changes
   final _player = AudioPlayer(useProxyForRequestHeaders: false);
   bool connection = true;
+  bool deviceSoundOff = false;
   Timer? _metadataResetTimer;
+  Timer? _deviceSoundCheckTimer;
   DateTime? _metadataResetDeadline;
   Duration? _metadataResetRemaining;
   String? _currentIcyMetadataKey;
@@ -194,7 +195,6 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
     }
 
     final remaining = _metadataResetDeadline!.difference(DateTime.now());
-    debugPrint('pausing the timer $remaining');
     _metadataResetRemaining = remaining.isNegative ? Duration.zero : remaining;
     _metadataResetTimer?.cancel();
     _metadataResetTimer = null;
@@ -207,14 +207,11 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
       return;
     }
 
-    debugPrint('resume the timer: $_metadataResetRemaining');
-
     final delay = _metadataResetRemaining!;
     _metadataResetRemaining = null;
     final now = DateTime.now();
     _metadataResetDeadline = now.add(delay);
     _metadataResetTimer = Timer(delay, () {
-      debugPrint('Icy metadata has reset');
       _resetMetadata();
     });
   }
@@ -240,7 +237,6 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
     if (!playing) {
       _metadataResetRemaining = delay;
       _metadataResetDeadline = now.add(delay);
-      debugPrint('Skipping metadata reset scheduling while playback is paused.');
       return;
     }
 
@@ -250,27 +246,24 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
       // If the current timer has less than 20 seconds left
       if (remaining > Duration.zero && remaining < const Duration(seconds: 20)) {
         delay = remaining + (news ? const Duration(seconds: 10) : const Duration(seconds: 15)); // extend it by 15 seconds or 10s when playing news.
-        debugPrint('Extending metadata reset timer by 15 seconds (new timer: ${delay.inSeconds}s)');
+        // debugPrint('Extending metadata reset timer by 15 seconds (new timer: ${delay.inSeconds}s)');
       } else {
         // Keep the existing timer when the metadata is unchanged and the countdown is still healthy.
         return;
       }
     }
 
-    debugPrint('Scheduling metadata reset in ${delay.inSeconds} seconds...');
     _resetMetadataResetTimer();
     _metadataResetRemaining = delay;
     _metadataResetDeadline = now.add(delay);
     
     _metadataResetTimer = Timer(delay, () {
       // set the timer
-      debugPrint('Icy metadata has reset');
       _resetMetadata();
     });
   }
 
   void _resetMetadata() {
-    debugPrint('Resetting metadata to default values');
     _resetMetadataResetTimer();
     _currentIcyMetadataKey = null;
     if (isInitialAd) {
@@ -308,7 +301,7 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
           ProcessingState.ready: AudioProcessingState.ready,
           ProcessingState.completed: AudioProcessingState.completed,
         }[processingState]!,
-        playing: _player.playing,
+        playing: playing,
         updatePosition: _player.position,
         bufferedPosition: _player.bufferedPosition,
       ),
@@ -341,10 +334,11 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
     _player.playbackEventStream.listen((event) {
       if (processingState != event.processingState) {
         processingState = event.processingState;
+        setPlayBackState(processingState);
         notifyListeners();
 
         if (processingState != .ready && isInitialAd && playing && !connection) {
-          debugPrint("initial ad didn't finish, stopping reset timer");
+          // debugPrint("initial ad didn't finish, stopping reset timer");
           _resetMetadataResetTimer();
           final locale = WidgetsBinding.instance.platformDispatcher.locale;
           final String title;
@@ -363,10 +357,16 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
         }
       }
 
-      setPlayBackState(processingState); // TODO: check if it can be in there ^
 
       // playbackState.close();
     });
+
+    if (!kIsWeb) {
+      FlutterVolumeController.addListener(
+        (_) => unawaited(_refreshDeviceSoundState()),
+        emitOnStart: true,
+      );
+    }
 
     
 
@@ -374,8 +374,6 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
     _player.icyMetadataStream.listen((metadata) {
       final metadataInfo = metadata?.info?.title?.trim();
       // final genre = metadata?.headers?.genre?.trim();
-      debugPrint('ICY metadata received: title="$metadataInfo"');
-
       if (metadataInfo == null) {
         return;
       }      
@@ -442,7 +440,6 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
           }
         }
       }
-      print('anitial ad: $isInitialAd');
 
       // Ignore repeated metadata unless it is close to expiry, in which case extend the timer.
       if (_currentIcyMetadataKey == metadataKey) {
@@ -460,18 +457,14 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
     // 5. Listen to connectivity changes and update the connection status
     if (kIsWeb) {
       connection = (await Connectivity().checkConnectivity()).first != ConnectivityResult.none;
-      debugPrint("initial connectivity: $connection");
       if (!connection) { // when it changed
         notifyListeners();
       }
     }
 
-    Connectivity().onConnectivityChanged.listen((results) {
-      debugPrint('Connectivity changed: $results');
-      
+    Connectivity().onConnectivityChanged.listen((results) {      
       if (connection != (results.first != ConnectivityResult.none)) {
         connection = results.first != ConnectivityResult.none;
-        debugPrint("verbindingveranderd, verbinding: $connection");
         notifyListeners();
 
         if (connection && playing && _player.processingState != ProcessingState.ready) {
@@ -486,7 +479,7 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
           );
           _player.play();
         } else if (!connection) {
-          setPlayBackState(_player.processingState); // TODO: check if needed
+          // setPlayBackState(_player.processingState);
          
         }
       }      
@@ -498,7 +491,25 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
     super.dispose();
     debugPrint('dispose called, disposing audio player');
     _resetMetadataResetTimer();
+    _deviceSoundCheckTimer?.cancel();
+    if (!kIsWeb) {
+      FlutterVolumeController.removeListener();
+    }
     _player.dispose();
+  }
+
+  Future<void> _refreshDeviceSoundState() async {
+    if (kIsWeb) return;
+
+    try {
+      final isMuted = await FlutterVolumeController.getMute();
+      if (isMuted != null && deviceSoundOff != isMuted) {
+        deviceSoundOff = isMuted;
+        notifyListeners();
+      }
+    } catch (error) {
+      debugPrint('Unable to read device mute state: $error');
+    }
   }
 
   void setMetaData(String? title, String? artist) {
@@ -566,14 +577,16 @@ RadioStatus get status {
     debugPrint('Stopping radio...');
     _player.stop();
     playing = false;
+    setPlayBackState(processingState);
     notifyListeners();
   }
 
   @override
   Future<void> play() async {
-    debugPrint('Playing radio...');
+    // debugPrint('Playing radio...');
     _player.play();
     playing = true;
+    setPlayBackState(processingState);
     notifyListeners();
   }
 
@@ -583,6 +596,7 @@ RadioStatus get status {
 
   Future<void> startFadeIn() async {
     playing = true;
+    setPlayBackState(processingState);
     if (_player.playing) return;
     final int waitTime = radioStations[streamNumber].canStartWithAd ? 10 : 8;
     await _player.setVolume(0);
@@ -597,10 +611,10 @@ RadioStatus get status {
 
   @override
   Future<void> pause() async {
-    debugPrint('Pausing radio...');
     _pauseMetadataResetTimer();
     _player.pause();
     playing = false;
+    setPlayBackState(processingState);
     notifyListeners();
   }
 
@@ -704,14 +718,16 @@ widget.handler.addListener(() {
     final RadioStatus status = widget.handler.status;
     final bool isInitialAd = widget.handler.isInitialAd;
     final int streamNumber = widget.handler.streamNumber;
-    final statusText = switch (status) {
-      RadioStatus.playing => l10n.playing,
-      RadioStatus.paused => l10n.paused,
-      RadioStatus.loading => l10n.loading,
-      RadioStatus.offline => l10n.offline,
-      RadioStatus.stopped => l10n.stopped,
-      RadioStatus.error => 'Error',
-    };
+    final statusText = (status == .playing || status == .loading) && widget.handler.deviceSoundOff
+        ? l10n.soundOff
+        : switch (status) {
+          RadioStatus.playing => l10n.playing,
+          RadioStatus.paused => l10n.paused,
+          RadioStatus.loading => l10n.loading,
+          RadioStatus.offline => l10n.offline,
+          RadioStatus.stopped => l10n.stopped,
+          RadioStatus.error => 'Error',
+        };
     final h = MediaQuery.sizeOf(context).height;
     return Scaffold(
       appBar: AppBar(

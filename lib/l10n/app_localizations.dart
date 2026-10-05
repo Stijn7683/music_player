@@ -133,6 +133,12 @@ abstract class AppLocalizations {
   /// **'Playing'**
   String get playing;
 
+  /// No description provided for @soundOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound off'**
+  String get soundOff;
+
   /// No description provided for @paused.
   ///
   /// In en, this message translates to:

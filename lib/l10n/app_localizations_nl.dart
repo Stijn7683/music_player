@@ -27,6 +27,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get playing => 'Afspelen';
 
   @override
+  String get soundOff => 'Geluid uit';
+
+  @override
   String get paused => 'Gepauzeerd';
 
   @override

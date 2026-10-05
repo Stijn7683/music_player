@@ -15,6 +15,9 @@
 
     "playing": "Ta toca",
     "@playing": {},
+
+    "soundOff": "Sonido paga",
+    "@soundOff": {},
     
     "paused": "Pausa",
     "@paused": {},

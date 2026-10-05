@@ -18,6 +18,9 @@
 
     "playing": "Afspelen",
     "@playing": {},
+
+    "soundOff": "Geluid uit",
+    "@soundOff": {},
     
     "paused": "Gepauzeerd",
     "@paused": {},
