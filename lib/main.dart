@@ -8,10 +8,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 // Joe Radio - A simple radio streaming app using just_audio and audio_service
 // in this version state management will be properly implemented with the use of Provider
 late final RadioAudioHandler radioHandler;
+const _layoutDirectionChannel = MethodChannel('app/layout_direction');
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -78,8 +80,54 @@ final darkTheme = ThemeData(
   ),
 );
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  bool _isRtl = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    unawaited(_readDirection());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_readDirection());
+    }
+  }
+
+  Future<void> _readDirection() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+
+    try {
+      final isRtl = await _layoutDirectionChannel.invokeMethod<bool>('isRtl') ?? false;
+      debugPrint('RTL channel returned: $isRtl');
+      if (mounted && isRtl != _isRtl) {
+        setState(() => _isRtl = isRtl);
+      }
+    } on MissingPluginException {
+      // Keep the framework's locale-based direction when the native channel is unavailable.
+      debugPrint('RTL channel failed: MissingPluginException');
+    } on PlatformException catch (error) {
+      debugPrint('Unable to read Android layout direction: $error');
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,15 +139,15 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('nl'), // Dutch
-        Locale('en'), // English
-        Locale('pap') // Papiamento
-      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
+      builder: (context, child) => Directionality(
+        textDirection: _isRtl ? TextDirection.rtl : Directionality.of(context),
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: RadioPage(handler: radioHandler),
     );
   }
@@ -354,6 +402,17 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
             }
           }
           setMetaData(title, null);
+        } else if(processingState == .completed && playing) {
+          debugPrint('Stream completed, attempting to reconnect...');
+          _player.setAudioSource(
+            AudioSource.uri(
+              Uri.parse(radioStations[streamNumber].url),
+              headers: kIsWeb
+                ? null
+                : const {'Icy-MetaData': '1'},
+            ),
+          );
+          _player.play();
         }
       }
 
@@ -513,6 +572,7 @@ class RadioAudioHandler extends BaseAudioHandler with SeekHandler, ChangeNotifie
   }
 
   void setMetaData(String? title, String? artist) {
+    debugPrint('Setting metadata: title="$title", artist="$artist"');
     mediaItem.add(
       MediaItem(
         id: 'joe-radio',
@@ -689,17 +749,11 @@ class _RadioPageState extends State<RadioPage> {
   @override
   void initState() {
     super.initState();
-    // _controller = RadioControllerProvider();
-    // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    //   _controller.initialize();
-    // });
-// widget.handler.playbackState.listen((state) {
-//   setState(() {});
-// });
-widget.handler.initialize();
-widget.handler.addListener(() {
-  setState(() {});
-});
+
+    widget.handler.initialize();
+    widget.handler.addListener(() {
+      setState(() {});
+    });
   }
 
   @override

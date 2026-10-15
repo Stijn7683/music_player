@@ -1,0 +1,39 @@
+{
+    "@@locale": "ar",
+
+    "play": "تشغيل",
+    "@play": {},
+
+    "pause": "إيقاف مؤقت",
+    "@pause": {},
+
+    "options": "الخيارات",
+    "@options": {},
+
+    "skip5Seconds": "تخطي ٥ ثوانٍ",
+    "@skip5Seconds": {},
+
+    "playLive": "استمع مباشرةً",
+    "@playLive": {},
+
+    "playing": "قيد التشغيل",
+    "@playing": {},
+
+    "soundOff": "الصوت مكتوم",
+    "@soundOff": {},
+
+    "paused": "متوقف مؤقتًا",
+    "@paused": {},
+
+    "offline": "غير متصل",
+    "@offline": {},
+
+    "loading": "جارٍ التحميل",
+    "@loading": {},
+
+    "stopped": "متوقف",
+    "@stopped": {},
+
+    "radioStation": "محطة الراديو:",
+    "@radioStation": {}
+}
