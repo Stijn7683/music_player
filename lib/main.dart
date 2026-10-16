@@ -7,6 +7,8 @@ import 'package:audio_service/audio_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'high_contrast_mode_stub.dart'
+  if (dart.library.js_interop) 'high_contrast_mode_web.dart';
 import 'l10n/app_localizations.dart';
 import 'package:flutter/services.dart';
 
@@ -16,6 +18,9 @@ late final RadioAudioHandler radioHandler;
 const _layoutDirectionChannel = MethodChannel('app/layout_direction');
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    initializeWebHighContrastDetection();
+  }
 
   final stopwatch = Stopwatch()..start();
 
@@ -88,7 +93,7 @@ final highContrastLightTheme = lightTheme.copyWith(
   ),
   scaffoldBackgroundColor: Color.fromRGBO(255, 246, 227, 1),
   appBarTheme: const AppBarTheme(
-    backgroundColor: const Color.fromRGBO(238, 151, 0, 1),
+    backgroundColor: Color.fromRGBO(238, 151, 0, 1),
     foregroundColor: Colors.white,
   ),
 );
@@ -136,21 +141,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   Future<void> _readDirection() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-      return;
-    }
+    if (kIsWeb) {
+      const rtlLanguages = {'ar', 'fa', 'he', 'iw', 'ps', 'sd', 'ur'};
+      final locale = WidgetsBinding.instance.platformDispatcher.locale;
+      final isRtl = rtlLanguages.contains(locale.languageCode.toLowerCase());
 
-    try {
-      final isRtl = await _layoutDirectionChannel.invokeMethod<bool>('isRtl') ?? false;
-      debugPrint('RTL channel returned: $isRtl');
       if (mounted && isRtl != _isRtl) {
         setState(() => _isRtl = isRtl);
       }
-    } on MissingPluginException {
-      // Keep the framework's locale-based direction when the native channel is unavailable.
-      debugPrint('RTL channel failed: MissingPluginException');
-    } on PlatformException catch (error) {
-      debugPrint('Unable to read Android layout direction: $error');
+    } else if (defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        final isRtl = await _layoutDirectionChannel.invokeMethod<bool>('isRtl') ?? false;
+        debugPrint('RTL channel returned: $isRtl');
+        if (mounted && isRtl != _isRtl) {
+          setState(() => _isRtl = isRtl);
+        }
+      } on MissingPluginException {
+        // Keep the framework's locale-based direction when the native channel is unavailable.
+        debugPrint('RTL channel failed: MissingPluginException');
+      } on PlatformException catch (error) {
+        debugPrint('Unable to read Android layout direction: $error');
+      }
     }
   }
 
@@ -162,40 +173,44 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Joe radio',
-      localizationsDelegates: [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      debugShowCheckedModeBanner: false,
-      theme: lightTheme,
-      darkTheme: darkTheme,
-    
-      highContrastTheme: highContrastLightTheme,
-      highContrastDarkTheme: highContrastDarkTheme,
-      
-      themeMode: ThemeMode.system,
-      builder: (context, child) {
-        return AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle(
-            systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarDividerColor: Colors.transparent,
-          ),
-          child: ColoredBox(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Directionality(
-              textDirection:
-                _isRtl ? TextDirection.rtl : Directionality.of(context),
-              child: child ?? const SizedBox.shrink(),
-            ),
-          ),
+    return ValueListenableBuilder<bool>(
+      valueListenable: webHighContrastEnabled,
+      builder: (context, webHighContrast, _) {
+        return MaterialApp(
+          title: 'Joe radio',
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          debugShowCheckedModeBanner: false,
+          theme: webHighContrast ? highContrastLightTheme : lightTheme,
+          darkTheme: webHighContrast ? highContrastDarkTheme : darkTheme,
+          highContrastTheme: highContrastLightTheme,
+          highContrastDarkTheme: highContrastDarkTheme,
+          
+          themeMode: ThemeMode.system,
+          builder: (context, child) {
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                systemNavigationBarColor: Colors.transparent,
+                systemNavigationBarDividerColor: Colors.transparent,
+              ),
+              child: ColoredBox(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Directionality(
+                  textDirection:
+                    _isRtl ? TextDirection.rtl : Directionality.of(context),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+            );
+          },
+          home: RadioPage(handler: radioHandler),
         );
       },
-      home: RadioPage(handler: radioHandler),
     );
   }
 }

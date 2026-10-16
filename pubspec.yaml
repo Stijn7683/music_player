@@ -44,6 +44,7 @@ dependencies:
   intl: any
   provider: any
   flutter_native_splash: ^2.4.8
+  web: ^1.1.1
   # just_audio_windows: ^0.2.3
   # audio_service_win: ^0.0.3
 
