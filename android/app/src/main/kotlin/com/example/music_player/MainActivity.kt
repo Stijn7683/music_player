@@ -4,14 +4,27 @@ package com.example.music_player
 
 
 import android.provider.Settings
+import android.os.Build
 import android.util.Log
 import android.view.View
+import androidx.core.view.WindowCompat
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 import com.ryanheise.audioservice.AudioServiceActivity
 
 class MainActivity : AudioServiceActivity() {
+    override fun onPostResume() {
+        super.onPostResume()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.navigationBarColor = 0 // for transparent nav bar
+        window.statusBarColor = 0 // for transparent status bar
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
+    }
+
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 

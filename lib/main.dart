@@ -52,7 +52,7 @@ final lightTheme = ThemeData(
   ),
   scaffoldBackgroundColor: orangeTint,
   appBarTheme: AppBarTheme(
-    backgroundColor: Colors.orange.shade400,
+    backgroundColor: Colors.orange.shade400, // const Color.fromRGBO(255, 167, 38, 1)
     // foregroundColor: Colors.white,
   ),
 );
@@ -77,6 +77,37 @@ final darkTheme = ThemeData(
   appBarTheme: AppBarTheme(
     backgroundColor: const Color.fromARGB(122, 255, 168, 38), // Color.fromARGB(255, 51, 31, 0),
     foregroundColor: Colors.white,
+  ),
+);
+
+final highContrastLightTheme = lightTheme.copyWith(
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: const Color.fromARGB(255, 168, 200, 255),
+    surface: Color.fromRGBO(255, 246, 227, 1),
+    contrastLevel: 1.0,
+  ),
+  scaffoldBackgroundColor: Color.fromRGBO(255, 246, 227, 1),
+  appBarTheme: const AppBarTheme(
+    backgroundColor: const Color.fromRGBO(238, 151, 0, 1),
+    foregroundColor: Colors.white,
+  ),
+);
+
+final highContrastDarkTheme = darkTheme.copyWith(
+  colorScheme: ColorScheme.fromSeed(
+    // seedColor: Color.fromRGBO(209, 147, 45, 0.7),
+    seedColor: const Color.fromARGB(255, 229, 236, 254),
+
+    brightness: Brightness.dark,
+    surface: Color.fromRGBO(0, 4, 21, 1),
+    contrastLevel: 1.0,
+  ),
+  scaffoldBackgroundColor: Color.fromRGBO(0, 4, 21, 1),
+  appBarTheme: AppBarTheme(
+    backgroundColor: Color.fromRGBO(209, 147, 45, 0.7), // Color.fromARGB(255, 51, 31, 0),
+
+    // backgroundColor: Colors.white,
+    // foregroundColor: Colors.black,
   ),
 );
 
@@ -143,11 +174,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       darkTheme: darkTheme,
+    
+      highContrastTheme: highContrastLightTheme,
+      highContrastDarkTheme: highContrastDarkTheme,
+      
       themeMode: ThemeMode.system,
-      builder: (context, child) => Directionality(
-        textDirection: _isRtl ? TextDirection.rtl : Directionality.of(context),
-        child: child ?? const SizedBox.shrink(),
-      ),
+      builder: (context, child) {
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarDividerColor: Colors.transparent,
+          ),
+          child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Directionality(
+              textDirection:
+                _isRtl ? TextDirection.rtl : Directionality.of(context),
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
+        );
+      },
       home: RadioPage(handler: radioHandler),
     );
   }
@@ -861,6 +908,7 @@ class _RadioPageState extends State<RadioPage> {
           ),
         ),
         radioStationsWidget(streamNumber),
+        SizedBox(height: 8),
       ],
     );
   }
